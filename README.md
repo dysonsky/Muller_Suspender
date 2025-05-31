@@ -1,17 +1,15 @@
-# 🤖 MULLER SUSPENDER X1
+# 🤖 MULLER SUSPENDER X1 
+> Advanced WhatsApp Bot with 17+ Features
 
-> Advanced WhatsApp bot with auto-moderation, anti-delete, and 17+ features.
+## ✨ Features
+- Auto-View Status 👀 (`status_watcher.py`)
+- Anti-Delete Messages 🚫 (`antidelete.py`)
+- License System 🔑 (`license_manager.py`)
 
-![Bot Demo](assets/demo.gif) <!-- Add a screenshot later -->
-
-## 🔥 Features
-- **Auto-Moderation**: Anti-spam, anti-link
-- **Admin Tools**: Add/remove users, promote
-- **Utility**: Always online, auto-typing
-- **Premium System**: Tiered access control
-
-## 🛠 Setup
+## 🚀 Quick Start
 ```bash
-git clone https://github.com/dysonsky/muller-suspender-x1.git
-cd muller-suspender-x1
-pip install -r requirements.txt
+# Install
+python setup.py
+
+# Run
+python start_bot.py
