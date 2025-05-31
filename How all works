@@ -1,0 +1,5 @@
+sequenceDiagram
+    start_bot.py->>bot_engine.py: Initializes bot
+    bot_engine.py->>status_watcher.py: Starts status watching
+    bot_engine.py->>antidelete.py: Enables anti-delete
+    bot_engine.py->>license_manager.py: Checks licenses
