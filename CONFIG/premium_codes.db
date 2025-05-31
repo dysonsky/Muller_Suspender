@@ -1,0 +1,6 @@
+# SQLite Table Schema
+CREATE TABLE licenses (
+    code TEXT PRIMARY KEY,
+    active BOOLEAN,
+    expiry_date DATE
+);
