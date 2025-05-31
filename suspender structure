@@ -1,0 +1,14 @@
+muller_bot/
+├── CORE/                  # Main bot logic
+│   ├── start_bot.py       # Launch script
+│   ├── bot_engine.py      # Core functionality
+├── FEATURES/              # All capabilities
+│   ├── status_watcher.py  # Feature 1
+│   ├── antidelete.py      # Feature 3
+│   └── license_system/    # License code handling
+├── SETUP/                 # Installation
+│   ├── install.py         # Dependency installer
+│   └── termux_setup.sh    # Android config
+└── CONFIG/                # Settings
+    ├── bot_settings.ini   # Config file
+    └── premium_codes.db   # License database
