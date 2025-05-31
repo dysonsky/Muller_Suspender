@@ -1,0 +1,5 @@
+# Run WhatsApp bot as worker
+worker: python src/main.py
+
+# Optional web interface
+web: gunicorn --bind 0.0.0.0:$PORT src.web_interface:app
