@@ -1,0 +1,35 @@
+{
+  "name": "MULLER SUSPENDER X1",
+  "description": "Advanced WhatsApp Bot with Anti-Delete, Auto-Reply, and License System",
+  "repository": "https://github.com/Muller_Suspender/muller-suspender-x1",
+  "logo": "https://i.imgur.com/XYZ123.png",  // Upload your bot logo
+  "keywords": ["whatsapp", "bot", "automation", "baileys"],
+  "env": {
+    "BOT_NAME": {
+      "description": "Your bot's display name",
+      "value": "MULLER SUSPENDER X1"
+    },
+    "ADMIN_NUMBERS": {
+      "description": "Admin phone numbers (comma separated with country code)",
+      "value": "254705101667,254114468030"
+    },
+    "LICENSE_KEY": {
+      "description": "Master license key for admin access",
+      "generator": "secret"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    },
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "formation": {
+    "worker": {
+      "quantity": 1,
+      "size": "free"
+    }
+  }
+}
