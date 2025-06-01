@@ -1,147 +1,139 @@
-// index.js - MULLER SUSPENDER X1 Complete Image System
-const express = require('express');
-const multer = require('multer');
+// index.js - Complete Standalone Version
+const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { createWorker } = require('tesseract.js');
-const sharp = require('sharp');
-const app = express();
-const port = process.env.PORT || 3000;
+const querystring = require('querystring');
 
-// Configuration
+// ======================
+// 🛠 CONFIGURATION
+// ======================
+const PORT = 3000;
 const UPLOAD_DIR = './uploads';
 const GALLERY_DIR = './gallery';
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif'];
 
-// Ensure directories exist
+// Create directories if they don't exist
 [UPLOAD_DIR, GALLERY_DIR].forEach(dir => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
-// Multer setup for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `muller-${Date.now()}${ext}`);
-  }
-});
-
-const upload = multer({ 
-  storage,
-  fileFilter: (req, file, cb) => {
-    cb(null, ALLOWED_TYPES.includes(file.mimetype));
-  }
-});
-
 // ======================
-// 🖼️ IMAGE ROUTES
+// 🌟 EXPRESS-LIKE SERVER
 // ======================
-
-// 1. Upload Endpoint
-app.post('/upload', upload.single('image'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
-  
-  res.json({ 
-    success: true,
-    url: `/images/${req.file.filename}`,
-    preview: `/api/preview/${req.file.filename}?size=300`
-  });
-});
-
-// 2. Gallery Endpoint
-app.get('/api/gallery', (req, res) => {
-  fs.readdir(GALLERY_DIR, (err, files) => {
-    if (err) return res.status(500).json({ error: err.message });
-    
-    const images = files.filter(f => 
-      ['.jpg', '.jpeg', '.png', '.gif'].includes(path.extname(f).toLowerCase())
-    ).map(img => ({
-      name: path.basename(img, path.extname(img)),
-      url: `/gallery/${img}`,
-      thumb: `/api/thumb/${img}`
-    }));
-    
-    res.json(images);
-  });
-});
-
-// 3. OCR Endpoint
-app.post('/api/ocr', upload.single('image'), async (req, res) => {
-  const worker = await createWorker('eng');
-  const { data: { text } } = await worker.recognize(req.file.path);
-  await worker.terminate();
-  
-  res.json({ text });
-});
-
-// 4. Filter Endpoint
-app.get('/api/filter', async (req, res) => {
-  const { image, filter } = req.query;
-  const validFilters = ['blur', 'grayscale', 'invert', 'sepia'];
-  
-  if (!validFilters.includes(filter)) {
-    return res.status(400).json({ error: 'Invalid filter' });
-  }
+const server = http.createServer(async (req, res) => {
+  // Route handler
+  const route = req.url.split('?')[0];
+  const params = querystring.parse(req.url.split('?')[1]);
 
   try {
-    let processor = sharp(path.join(UPLOAD_DIR, image));
-    
-    switch(filter) {
-      case 'blur': processor = processor.blur(5); break;
-      case 'grayscale': processor = processor.grayscale(); break;
-      case 'invert': processor = processor.negate(); break;
-      case 'sepia': processor = processor.modulate({
-        saturation: 0.5,
-        brightness: 0.8
-      }); break;
+    // 🖼️ Image Upload
+    if (route === '/upload' && req.method === 'POST') {
+      let body = '';
+      req.on('data', chunk => body += chunk);
+      req.on('end', () => {
+        const base64Data = body.replace(/^data:image\/\w+;base64,/, '');
+        const filename = `muller-${Date.now()}.jpg`;
+        fs.writeFileSync(path.join(UPLOAD_DIR, filename), base64Data, 'base64');
+        
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ 
+          success: true, 
+          url: `/image/${filename}` 
+        }));
+      });
+      return;
     }
-    
-    res.set('Content-Type', 'image/jpeg');
-    return processor.jpeg().pipe(res);
+
+    // 🏞️ Gallery List
+    if (route === '/api/gallery' && req.method === 'GET') {
+      const files = fs.readdirSync(GALLERY_DIR).filter(f => 
+        ['.jpg','.jpeg','.png'].includes(path.extname(f).toLowerCase())
+      );
+      
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(files.map(f => ({
+        name: path.basename(f, path.extname(f)),
+        url: `/gallery/${f}`
+      }))));
+      return;
+    }
+
+    // 📜 Serve Image Files
+    if (route.startsWith('/image/') || route.startsWith('/gallery/')) {
+      const dir = route.startsWith('/image/') ? UPLOAD_DIR : GALLERY_DIR;
+      const filepath = path.join(dir, route.split('/').pop());
+      
+      if (fs.existsSync(filepath)) {
+        const image = fs.readFileSync(filepath);
+        res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+        res.end(image, 'binary');
+      } else {
+        res.writeHead(404);
+        res.end('Image not found');
+      }
+      return;
+    }
+
+    // Default response
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.end(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>MULLER SUSPENDER X1</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 40px; }
+          .upload-box { border: 2px dashed #ccc; padding: 20px; text-align: center; }
+        </style>
+      </head>
+      <body>
+        <h1>MULLER SUSPENDER X1 Image Server</h1>
+        <div class="upload-box">
+          <h3>🖼️ Image Upload</h3>
+          <input type="file" id="imageInput" accept="image/*">
+          <button onclick="uploadImage()">Upload</button>
+          <div id="result"></div>
+        </div>
+        <script>
+          async function uploadImage() {
+            const file = document.getElementById('imageInput').files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+              const res = await fetch('/upload', {
+                method: 'POST',
+                body: e.target.result
+              });
+              const data = await res.json();
+              document.getElementById('result').innerHTML = 
+                \`<p>Uploaded: <a href="\${data.url}" target="_blank">View</a></p>\`;
+            };
+            reader.readAsDataURL(file);
+          }
+        </script>
+      </body>
+      </html>
+    `);
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: err.message }));
   }
 });
 
 // ======================
-// 🖼️ IMAGE PROCESSING
+// 🚀 START SERVER
 // ======================
-
-// Thumbnail Generator
-app.get('/api/thumb/:image', (req, res) => {
-  sharp(path.join(GALLERY_DIR, req.params.image))
-    .resize(200, 200)
-    .toBuffer()
-    .then(data => {
-      res.set('Content-Type', 'image/jpeg');
-      res.send(data);
-    })
-    .catch(err => res.status(404).send('Image not found'));
-});
-
-// Preview Generator
-app.get('/api/preview/:image', (req, res) => {
-  const size = parseInt(req.query.size) || 300;
-  
-  sharp(path.join(UPLOAD_DIR, req.params.image))
-    .resize(size)
-    .toBuffer()
-    .then(data => {
-      res.set('Content-Type', 'image/jpeg');
-      res.send(data);
-    })
-    .catch(err => res.status(404).send('Image not found'));
-});
-
-// ======================
-// 🚀 SERVER START
-// ======================
-app.use('/images', express.static(UPLOAD_DIR));
-app.use('/gallery', express.static(GALLERY_DIR));
-
-app.listen(port, () => {
-  console.log(`MULLER SUSPENDER X1 Image Server running on port ${port}`);
+server.listen(PORT, () => {
+  console.log(`
+  ███╗   ███╗██╗   ██╗██╗     ██╗  ██╗███████╗
+  ████╗ ████║██║   ██║██║     ██║  ██║██╔════╝
+  ██╔████╔██║██║   ██║██║     ███████║█████╗  
+  ██║╚██╔╝██║██║   ██║██║     ██╔══██║██╔══╝  
+  ██║ ╚═╝ ██║╚██████╔╝███████╗██║  ██║███████╗
+  ╚═╝     ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝╚══════╝
+  SUSPENDER X1 Image Server running on port ${PORT}
+  `);
   console.log(`📁 Uploads: ${path.resolve(UPLOAD_DIR)}`);
   console.log(`🖼️ Gallery: ${path.resolve(GALLERY_DIR)}`);
 });
