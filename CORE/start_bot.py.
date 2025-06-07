@@ -1,8 +1,0 @@
-from CORE.bot_engine import MullerBot
-
-bot = MullerBot(
-    name="MULLER SUSPENDER X1",
-    prefix="!", 
-    admins=["254705101667@s.whatsapp.net"]
-)
-bot.run()
